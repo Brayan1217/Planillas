@@ -1,0 +1,15 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  calidad-seguridad:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - run: pip install -r requirements.txt pytest-cov ruff bandit pip-audit
+      - run: ruff check app tests            # calidad estatica
+      - run: bandit -r app -q                # SAST
+      - run: pip-audit -r requirements.txt   # dependencias vulnerables
+      - run: pytest --cov=app --cov-fail-under=85
+      - run: docker build -t planillas:${{ github.sha }} .

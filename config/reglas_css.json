@@ -1,0 +1,16 @@
+{
+  "_aviso": "VALORES DE DEMOSTRACION. Verificar contra la normativa vigente de la CSS (Ley 51 de 2005 y sus reformas, incl. Ley 462 de 2025) antes de usar en produccion. Las tarifas se versionan por fecha de vigencia.",
+  "vigencias": [
+    {
+      "desde": "2006-01-01",
+      "cuota_empleado": "0.0975",
+      "cuota_patrono": "0.1225",
+      "seguro_educativo_empleado": "0.0125",
+      "seguro_educativo_patrono": "0.0150"
+    }
+  ],
+  "salario_minimo_referencia": "400.00",
+  "salario_maximo_alerta": "50000.00",
+  "tolerancia_centavos": "0.01",
+  "tamano_lote": 5000
+}
