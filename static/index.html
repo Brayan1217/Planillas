@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planillas CSS · Prototipo</title>
+<style>
+  :root{--bg:#f4f6fa;--card:#fff;--ink:#17202e;--mut:#64708a;--line:#e2e7f0;--pri:#0b5cff;--ok:#0f9d58;--err:#d93025;--warn:#e8a200}
+  @media (prefers-color-scheme:dark){:root{--bg:#0f1420;--card:#171e2e;--ink:#e8edf7;--mut:#8f9bb5;--line:#27314a;--pri:#4d8bff;--ok:#34c37a;--err:#ff6b60;--warn:#f0b429}}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif}
+  header{padding:20px 16px;max-width:1100px;margin:auto}h1{margin:0;font-size:22px}header p{margin:4px 0 0;color:var(--mut)}
+  main{max-width:1100px;margin:auto;padding:0 16px 48px;display:grid;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+  h2{margin:0 0 12px;font-size:16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  label{display:block;font-size:13px;color:var(--mut);margin-bottom:4px}
+  input[type=text],input[type=date]{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+  .drop{margin-top:14px;border:2px dashed var(--line);border-radius:12px;padding:28px;text-align:center;color:var(--mut);cursor:pointer}
+  .drop.on{border-color:var(--pri);color:var(--pri)}
+  button{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:600;cursor:pointer}
+  button:disabled{opacity:.45;cursor:not-allowed}button.sec{background:transparent;color:var(--pri);border:1px solid var(--pri)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+  .bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden}.bar>i{display:block;height:100%;width:0;background:var(--pri);transition:width .3s}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:14px}
+  .stat{background:var(--bg);border-radius:10px;padding:12px}.stat b{display:block;font-size:20px}.stat span{font-size:12px;color:var(--mut)}
+  .pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600;color:#fff}
+  .lista{background:var(--ok)}.con_errores,.fallida{background:var(--err)}.validando,.enviando,.en_cola{background:var(--warn)}.enviada{background:var(--ok)}
+  table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--mut);font-weight:600}
+  .tw{overflow-x:auto}.e{color:var(--err);font-weight:600}.w{color:var(--warn);font-weight:600}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:4px 10px;border-radius:99px;font-size:12px;cursor:pointer;font-weight:500}
+  .chip.act{border-color:var(--pri);color:var(--pri)}.hide{display:none}.mut{color:var(--mut);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Plataforma de Planillas · CSS</h1>
+  <p>Cargue su planilla completa (uno o varios archivos), corrija errores antes de enviar y transmítala por API segura. <b>Prototipo con API de la CSS simulada.</b></p>
+</header>
+<main>
+  <section class="card">
+    <h2>1 · Cargar planilla</h2>
+    <div class="grid">
+      <div><label>RUC</label><input type="text" id="ruc" value="155-123-45678"></div>
+      <div><label>Razón social</label><input type="text" id="rs" value="Empresa Demo, S.A."></div>
+      <div><label>Periodo (fecha de corte)</label><input type="date" id="periodo"></div>
+    </div>
+    <div class="drop" id="drop">Arrastre archivos .xlsx / .csv aquí o haga clic para seleccionar<br><span class="mut">Puede subir varios archivos: se tratan como una sola planilla.</span></div>
+    <input type="file" id="files" multiple accept=".csv,.txt,.xlsx,.xlsm" class="hide">
+    <div class="mut" id="sel"></div>
+    <div class="row"><button id="subir" disabled>Validar planilla</button><a href="/static/plantilla_planilla.csv" download class="mut">Descargar plantilla</a></div>
+  </section>
+
+  <section class="card hide" id="res">
+    <h2>2 · Resultado de la validación <span class="pill" id="estado"></span></h2>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="stats" id="stats"></div>
+    <div class="chips" id="chips"></div>
+    <div class="row"><button id="enviar" disabled>Enviar a la CSS</button><button class="sec" id="csv">Descargar errores (CSV)</button><span class="mut" id="msg"></span></div>
+  </section>
+
+  <section class="card hide" id="det">
+    <h2>Detalle de hallazgos</h2>
+    <div class="tw"><table><thead><tr><th>Archivo</th><th>Fila</th><th>Campo</th><th>Valor</th><th>Problema</th><th>Cómo corregir</th></tr></thead><tbody id="tb"></tbody></table></div>
+    <div class="row"><button class="sec" id="mas">Ver más</button><span class="mut" id="cnt"></span></div>
+  </section>
+
+  <section class="card hide" id="cmp">
+    <h2>3 · Comprobante</h2><div id="cmpbody"></div>
+  </section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const KEY='demo-key', H={'X-API-Key':KEY};
+let files=[], job=null, offset=0, filtro=null, timer=null;
+$('periodo').value=new Date().toISOString().slice(0,10);
+$('drop').onclick=()=>$('files').click();
+$('files').onchange=e=>pick([...e.target.files]);
+['dragover','dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.toggle('on',ev==='dragover');if(ev==='drop')pick([...e.dataTransfer.files])}));
+function pick(f){files=f;$('sel').textContent=f.map(x=>`${x.name} (${(x.size/1048576).toFixed(1)} MB)`).join(' · ');$('subir').disabled=!f.length}
+const fmt=n=>Number(n).toLocaleString('es-PA',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('subir').onclick=async()=>{
+  const fd=new FormData();fd.append('ruc',$('ruc').value);fd.append('razon_social',$('rs').value);fd.append('periodo',$('periodo').value);
+  files.forEach(f=>fd.append('archivos',f));
+  $('subir').disabled=true;$('subir').textContent='Subiendo…';
+  const r=await fetch('/api/planillas',{method:'POST',headers:H,body:fd});
+  $('subir').textContent='Validar planilla';$('subir').disabled=false;
+  if(!r.ok){alert((await r.json()).detail);return}
+  job=(await r.json()).id;filtro=null;offset=0;$('tb').innerHTML='';
+  $('res').classList.remove('hide');$('det').classList.add('hide');$('cmp').classList.add('hide');
+  poll();
+};
+async function poll(){
+  clearInterval(timer);
+  const s=await (await fetch(`/api/planillas/${job}`,{headers:H})).json();
+  render(s);
+  if(['validando','en_cola','enviando'].includes(s.estado))timer=setTimeout(poll,600);
+}
+function render(s){
+  $('estado').textContent=s.estado.replace('_',' ');$('estado').className='pill '+s.estado;
+  const pct=s.estado==='enviando'?Math.min(95,(s.envio.registros||0)/Math.max(1,s.total_filas)*100):(['lista','con_errores','enviada'].includes(s.estado)?100:5);
+  $('prog').style.width=pct+'%';
+  const st=[['Registros',s.total_filas.toLocaleString()],['Errores',s.errores.toLocaleString()],['Advertencias',s.advertencias.toLocaleString()],['Tiempo',s.segundos_validacion+' s']];
+  if(s.totales.salarios)st.push(['Salarios','B/. '+fmt(s.totales.salarios)],['CSS empleado','B/. '+fmt(s.totales.css_empleado)],['CSS patrono','B/. '+fmt(s.totales.css_patrono)],['Seg. educativo','B/. '+fmt(Number(s.totales.se_empleado)+Number(s.totales.se_patrono))]);
+  $('stats').innerHTML=st.map(([a,b])=>`<div class="stat"><b>${b}</b><span>${a}</span></div>`).join('');
+  $('chips').innerHTML=s.por_codigo.map(c=>`<button class="chip ${filtro===c.codigo?'act':''}" data-c="${c.codigo}">${c.codigo} · ${esc(c.descripcion)}: ${c.cantidad.toLocaleString()}</button>`).join('');
+  document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{filtro=filtro===b.dataset.c?null:b.dataset.c;offset=0;$('tb').innerHTML='';cargar();render(s)});
+  $('enviar').disabled=s.estado!=='lista';
+  $('msg').textContent=s.mensaje||(s.estado==='lista'?'Sin errores: lista para enviar.':s.estado==='con_errores'?'Corrija los errores y vuelva a cargar. El envío está bloqueado.':s.estado==='enviando'?`Enviando… ${s.envio.lotes||0} lotes`:'');
+  if(s.hallazgos_truncados)$('msg').textContent+=' (se muestran los primeros 200 000 hallazgos; descargue el CSV)';
+  if(['lista','con_errores'].includes(s.estado)&&(s.errores||s.advertencias)&&!$('tb').children.length){$('det').classList.remove('hide');cargar()}
+  if(s.estado==='enviada'){$('cmp').classList.remove('hide');$('cmpbody').innerHTML=`<p><b>Comprobante ${esc(s.envio.comprobante)}</b> — ${s.envio.registros.toLocaleString()} registros en ${s.envio.lotes} lotes, conciliados con la CSS (${esc(s.envio.estado)}).</p>`}
+}
+async function cargar(){
+  const q=new URLSearchParams({offset,limit:100});if(filtro)q.set('codigo',filtro);
+  const d=await (await fetch(`/api/planillas/${job}/hallazgos?${q}`,{headers:H})).json();
+  $('tb').insertAdjacentHTML('beforeend',d.items.map(h=>`<tr><td>${esc(h.archivo)}</td><td>${h.fila}</td><td>${esc(h.campo)}</td><td>${esc(h.valor)}</td><td class="${h.severidad==='error'?'e':'w'}">${esc(h.mensaje)}</td><td>${esc(h.sugerencia)}</td></tr>`).join(''));
+  offset+=d.items.length;$('cnt').textContent=`Mostrando ${offset.toLocaleString()} de ${d.total.toLocaleString()}`;$('mas').classList.toggle('hide',offset>=d.total);
+}
+$('mas').onclick=cargar;
+$('enviar').onclick=async()=>{$('enviar').disabled=true;await fetch(`/api/planillas/${job}/enviar`,{method:'POST',headers:H});poll()};
+$('csv').onclick=async()=>{const b=await (await fetch(`/api/planillas/${job}/hallazgos.csv`,{headers:H})).blob();const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`errores_${job}.csv`;a.click()};
+</script>
+</body>
+</html>
